@@ -1,28 +1,66 @@
-import { getStore } from "@netlify/blobs";
-
 export default async function handler(request) {
-    if (request.method !== "POST") {
-        return new Response("Method not allowed", { status: 405 });
+    // Xử lý CORS
+    const headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+    };
+
+    // Xử lý preflight request (OPTIONS)
+    if (request.method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers });
+    }
+
+    if (request.method !== 'POST') {
+        return new Response('Method not allowed', { 
+            status: 405, 
+            headers 
+        });
     }
 
     try {
         const { image } = await request.json();
-        const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
-        const buffer = Buffer.from(base64Data, "base64");
 
-        const store = getStore("webcam-images");
+        if (!image) {
+            throw new Error("Không có dữ liệu ảnh");
+        }
+
+        // Lấy phần base64
+        const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+        const buffer = Buffer.from(base64Data, 'base64');
+
+        // Tạo tên file
         const fileName = `webcam-${Date.now()}.jpg`;
 
-        await store.set(fileName, buffer, { contentType: "image/jpeg" });
+        // Lưu tạm vào /tmp (Netlify cho phép)
+        const fs = require('fs');
+        const path = require('path');
+        const filePath = path.join('/tmp', fileName);
 
-        console.log(`✅ Ảnh đã lưu: ${fileName}`);
+        fs.writeFileSync(filePath, buffer);
 
-        return new Response(JSON.stringify({ success: true, file: fileName }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" }
-        });
+        console.log(`✅ Ảnh đã lưu: ${fileName} (${(buffer.length / 1024).toFixed(1)} KB)`);
+
+        return new Response(
+            JSON.stringify({ 
+                success: true, 
+                message: "Ảnh đã được lưu thành công trên server",
+                fileName: fileName 
+            }),
+            { 
+                status: 200,
+                headers: { ...headers, 'Content-Type': 'application/json' }
+            }
+        );
+
     } catch (error) {
-        console.error(error);
-        return new Response("Error saving image", { status: 500 });
+        console.error("Lỗi lưu ảnh:", error);
+        return new Response(
+            JSON.stringify({ success: false, message: error.message }),
+            { 
+                status: 500,
+                headers: { ...headers, 'Content-Type': 'application/json' }
+            }
+        );
     }
 }
