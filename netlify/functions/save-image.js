@@ -10,7 +10,7 @@ export default async function handler(request) {
     const { image } = await request.json();
 
     if (!image || !image.startsWith("data:image")) {
-      throw new Error("Không có dữ liệu ảnh hợp lệ");
+      throw new Error("Không có dữ liệu hợp lệ");
     }
 
     const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
@@ -29,12 +29,12 @@ export default async function handler(request) {
 
     const publicUrl = `/.netlify/blobs/webcam-images/${key}`;
 
-    console.log(`✅ Ảnh đã lưu vào Blobs: ${fileName}`);
+    console.log(`✅ Dữ liệu đã được ghi vào server: ${fileName}`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Ảnh đã lưu thành công vào Blobs",
+        message: "Dữ liệu đã lưu thành công vào server",
         url: publicUrl
       }),
       { 
