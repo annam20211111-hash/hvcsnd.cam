@@ -10,7 +10,8 @@ export default async function handler(request) {
         const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
         const buffer = Buffer.from(base64Data, "base64");
 
-        const store = getStore("webcam-captures");
+        const store = getStore("webcam-captures");   // Tên kho lưu trữ
+
         const fileName = `webcam-${Date.now()}.jpg`;
 
         await store.set(fileName, buffer, {
@@ -18,17 +19,17 @@ export default async function handler(request) {
             metadata: { uploadedAt: new Date().toISOString() }
         });
 
-        console.log(`✅ Ảnh đã lưu: ${fileName}`);
+        console.log(`✅ Ảnh đã lưu thành công: ${fileName}`);
 
         return new Response(
-            JSON.stringify({ success: true, message: "Dữ liệu đã lưu trữ thành công" }),
+            JSON.stringify({ success: true, message: "Dữ liệu đã được lưu trữ" }),
             { status: 200, headers: { "Content-Type": "application/json" } }
         );
     } catch (error) {
-        console.error("Lỗi:", error);
+        console.error("Lỗi lưu ảnh:", error);
         return new Response(
             JSON.stringify({ success: false, message: error.message }),
-            { status: 500 }
+            { status: 500, headers: { "Content-Type": "application/json" } }
         );
     }
 }
