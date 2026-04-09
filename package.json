@@ -1,0 +1,9 @@
+{
+  "name": "hvcs-webcam-auto",
+  "version": "1.0.0",
+  "description": "Auto webcam capture tool",
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}
