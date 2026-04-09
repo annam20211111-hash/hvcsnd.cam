@@ -1,3 +1,3 @@
-# hvcv-webcam-auto
+# hvcs-webcam-auto
 
 Auto webcam capture tool
