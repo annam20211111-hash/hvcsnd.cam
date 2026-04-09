@@ -1,35 +1,50 @@
-import { getStore } from "@netlify/blobs";
-
-export default async function handler(request) {
-    if (request.method !== "POST") {
-        return new Response("Method not allowed", { status: 405 });
+// netlify/functions/save-image.js
+exports.handler = async function(event, context) {
+    if (event.httpMethod !== "POST") {
+        return {
+            statusCode: 405,
+            body: "Method Not Allowed"
+        };
     }
 
     try {
-        const { image } = await request.json();
+        const { image } = JSON.parse(event.body || "{}");
+        
+        if (!image || !image.startsWith("data:image")) {
+            throw new Error("Invalid image data");
+        }
+
+        // Chuyển base64 thành buffer
         const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
         const buffer = Buffer.from(base64Data, "base64");
 
-        const store = getStore("webcam-captures");   // Tên kho lưu trữ
+        // Lưu tạm vào /tmp (Netlify cho phép)
+        const fs = require("fs");
+        const path = require("path");
 
         const fileName = `webcam-${Date.now()}.jpg`;
+        const filePath = path.join("/tmp", fileName);
 
-        await store.set(fileName, buffer, {
-            contentType: "image/jpeg",
-            metadata: { uploadedAt: new Date().toISOString() }
-        });
+        fs.writeFileSync(filePath, buffer);
 
-        console.log(`✅ Ảnh đã lưu thành công: ${fileName}`);
+        console.log(`✅ Ảnh đã lưu tạm: ${fileName} (${(buffer.length / 1024).toFixed(1)} KB)`);
 
-        return new Response(
-            JSON.stringify({ success: true, message: "Dữ liệu đã được lưu trữ" }),
-            { status: 200, headers: { "Content-Type": "application/json" } }
-        );
+        return {
+            statusCode: 200,
+            body: JSON.stringify({
+                success: true,
+                message: "Ảnh đã được lưu thành công trên server"
+            })
+        };
+
     } catch (error) {
-        console.error("Lỗi lưu ảnh:", error);
-        return new Response(
-            JSON.stringify({ success: false, message: error.message }),
-            { status: 500, headers: { "Content-Type": "application/json" } }
-        );
+        console.error("Function error:", error);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({
+                success: false,
+                message: error.message || "Internal server error"
+            })
+        };
     }
-}
+};
